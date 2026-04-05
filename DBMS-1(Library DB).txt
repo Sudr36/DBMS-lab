@@ -1,0 +1,171 @@
+-- ===============================
+-- LIBRARY DATABASE COMPLETE FILE
+-- ===============================
+
+-- 1. CREATE DATABASE
+DROP DATABASE IF EXISTS LibraryDB;
+CREATE DATABASE LibraryDB;
+USE LibraryDB;
+
+-- ===============================
+-- 2. CREATE TABLES
+-- ===============================
+
+CREATE TABLE BOOK (
+    Book_id INT PRIMARY KEY,
+    Title VARCHAR(100),
+    Publisher_Name VARCHAR(100),
+    Pub_Year INT
+);
+
+CREATE TABLE PUBLISHER (
+    Name VARCHAR(100) PRIMARY KEY,
+    Address VARCHAR(200),
+    Phone VARCHAR(15)
+);
+
+CREATE TABLE BOOK_AUTHORS (
+    Book_id INT,
+    Author_Name VARCHAR(100),
+    PRIMARY KEY (Book_id, Author_Name),
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE
+);
+
+CREATE TABLE LIBRARY_PROGRAMME (
+    Programme_id INT PRIMARY KEY,
+    Programme_Name VARCHAR(100),
+    Address VARCHAR(200)
+);
+
+CREATE TABLE BOOK_COPIES (
+    Book_id INT,
+    Programme_id INT,
+    No_of_Copies INT,
+    PRIMARY KEY (Book_id, Programme_id),
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Programme_id) REFERENCES LIBRARY_PROGRAMME(Programme_id) ON DELETE CASCADE
+);
+
+CREATE TABLE CARD (
+    Card_No INT PRIMARY KEY
+);
+
+CREATE TABLE BOOK_LENDING (
+    Book_id INT,
+    Programme_id INT,
+    Card_No INT,
+    Date_Out DATE,
+    Due_Date DATE,
+    FOREIGN KEY (Book_id) REFERENCES BOOK(Book_id) ON DELETE CASCADE,
+    FOREIGN KEY (Programme_id) REFERENCES LIBRARY_PROGRAMME(Programme_id) ON DELETE CASCADE,
+    FOREIGN KEY (Card_No) REFERENCES CARD(Card_No) ON DELETE CASCADE
+);
+
+-- ===============================
+-- 3. INSERT SAMPLE DATA
+-- ===============================
+
+INSERT INTO PUBLISHER VALUES
+('Pearson', 'Delhi', '1111111111'),
+('McGraw Hill', 'Mumbai', '2222222222');
+
+INSERT INTO BOOK VALUES
+(1, 'DBMS', 'Pearson', 2015),
+(2, 'Operating Systems', 'McGraw Hill', 2016),
+(3, 'Networks', 'Pearson', 2008);
+
+INSERT INTO BOOK_AUTHORS VALUES
+(1, 'Author A'),
+(1, 'Author B'),
+(2, 'Author C'),
+(3, 'Author D');
+
+INSERT INTO LIBRARY_PROGRAMME VALUES
+(101, 'CSE', 'Block A'),
+(102, 'ECE', 'Block B');
+
+INSERT INTO BOOK_COPIES VALUES
+(1, 101, 5),
+(1, 102, 3),
+(2, 101, 4),
+(3, 102, 2);
+
+INSERT INTO CARD VALUES
+(1001),
+(1002);
+
+INSERT INTO BOOK_LENDING VALUES
+(1, 101, 1001, '2017-01-10', '2017-01-20'),
+(1, 101, 1001, '2017-02-10', '2017-02-20'),
+(1, 101, 1001, '2017-03-10', '2017-03-20'),
+(1, 101, 1001, '2017-04-10', '2017-04-20'),
+(2, 101, 1002, '2017-05-01', '2017-05-10');
+
+-- ===============================
+-- 4. REQUIRED QUERIES
+-- ===============================
+
+-- Query 1: Retrieve all book details
+SELECT 
+    B.Book_id,
+    B.Title,
+    B.Publisher_Name,
+    BA.Author_Name,
+    BC.Programme_id,
+    BC.No_of_Copies
+FROM BOOK B
+JOIN BOOK_AUTHORS BA ON B.Book_id = BA.Book_id
+JOIN BOOK_COPIES BC ON B.Book_id = BC.Book_id;
+
+-- Query 2: Borrowers who borrowed more than 3 books (Jan-Jun 2017)
+SELECT Card_No
+FROM BOOK_LENDING
+WHERE Date_Out BETWEEN '2017-01-01' AND '2017-06-30'
+GROUP BY Card_No
+HAVING COUNT(Book_id) > 3;
+
+-- Query 3: Delete a book (Cascade effect)
+-- (Uncomment to execute)
+-- DELETE FROM BOOK WHERE Book_id = 1;
+
+-- ===============================
+-- 5. PARTITION TABLE
+-- ===============================
+
+CREATE TABLE BOOK_PARTITION (
+    Book_id INT,
+    Title VARCHAR(100),
+    Publisher_Name VARCHAR(100),
+    Pub_Year INT
+)
+PARTITION BY RANGE (Pub_Year) (
+    PARTITION p1 VALUES LESS THAN (2010),
+    PARTITION p2 VALUES LESS THAN (2020),
+    PARTITION p3 VALUES LESS THAN MAXVALUE
+);
+
+-- Insert into partition table
+INSERT INTO BOOK_PARTITION SELECT * FROM BOOK;
+
+-- Test partition query
+SELECT * FROM BOOK_PARTITION WHERE Pub_Year = 2015;
+
+-- ===============================
+-- 6. VIEW CREATION
+-- ===============================
+
+CREATE VIEW Available_Books AS
+SELECT 
+    B.Book_id,
+    B.Title,
+    SUM(BC.No_of_Copies) AS Total_Copies
+FROM BOOK B
+JOIN BOOK_COPIES BC ON B.Book_id = BC.Book_id
+GROUP BY B.Book_id, B.Title;
+
+-- View usage
+SELECT * FROM Available_Books;
+
+-- ===============================
+-- END OF FILE
+-- ===============================
