@@ -1,0 +1,129 @@
+CREATE DATABASE OrderDB;
+
+USE OrderDB;
+
+CREATE TABLE SALESMAN
+(
+    Salesman_id INT PRIMARY KEY,
+    Name VARCHAR(30),
+    City VARCHAR(30),
+    Commission DECIMAL(5,2)
+);
+
+CREATE TABLE CUSTOMER
+(
+    Customer_id INT PRIMARY KEY,
+    Cust_Name VARCHAR(30),
+    City VARCHAR(30),
+    Grade INT,
+    Salesman_id INT,
+    FOREIGN KEY (Salesman_id) REFERENCES SALESMAN(Salesman_id)
+);
+
+CREATE TABLE ORDERS
+(
+    Ord_No INT PRIMARY KEY,
+    Purchase_Amt DECIMAL(10,2),
+    Ord_Date DATE,
+    Customer_id INT,
+    Salesman_id INT,
+    FOREIGN KEY (Customer_id) REFERENCES CUSTOMER(Customer_id),
+    FOREIGN KEY (Salesman_id) REFERENCES SALESMAN(Salesman_id)
+);
+
+INSERT INTO SALESMAN VALUES
+(5001,'Raj','Bangalore',10.5),
+(5002,'Arun','Mysore',12.0),
+(5003,'Kiran','Chennai',11.0),
+(1000,'Ramesh','Hyderabad',9.5);
+
+INSERT INTO CUSTOMER VALUES
+(101,'Amit','Bangalore',200,5001),
+(102,'Sneha','Bangalore',300,5001),
+(103,'Ravi','Mysore',400,5002),
+(104,'Priya','Mysore',500,5002),
+(105,'John','Delhi',100,1000);
+
+INSERT INTO ORDERS VALUES
+(1,5000,'2025-01-10',101,5001),
+(2,9000,'2025-01-10',103,5002),
+(3,7500,'2025-01-11',104,5001),
+(4,3000,'2025-01-11',105,1000);
+
+
+
+
+
+Q1>
+
+SELECT COUNT(*) AS Count_Above_Avg
+FROM CUSTOMER
+WHERE Grade >
+(
+    SELECT AVG(Grade)
+    FROM CUSTOMER
+    WHERE City='Bangalore'
+);
+
+
+
+
+
+Q2>
+
+SELECT S.Salesman_id, S.Name, COUNT(C.Customer_id) AS Total_Customers
+FROM SALESMAN S, CUSTOMER C
+WHERE S.Salesman_id = C.Salesman_id
+GROUP BY S.Salesman_id, S.Name
+HAVING COUNT(C.Customer_id) > 1;
+
+
+
+
+
+Q3>
+
+SELECT S.Name, S.City, 'Has Customer' AS Status
+FROM SALESMAN S, CUSTOMER C
+WHERE S.City = C.City
+
+UNION
+
+SELECT S.Name, S.City, 'No Customer' AS Status
+FROM SALESMAN S
+WHERE S.City NOT IN
+(
+    SELECT City
+    FROM CUSTOMER
+);
+
+
+
+
+
+Q4>
+
+CREATE VIEW Highest_Order_Salesman AS
+SELECT O.Ord_Date, S.Salesman_id, S.Name, O.Purchase_Amt
+FROM ORDERS O, SALESMAN S
+WHERE O.Salesman_id = S.Salesman_id
+AND O.Purchase_Amt =
+(
+    SELECT MAX(Purchase_Amt)
+    FROM ORDERS
+    WHERE Ord_Date = O.Ord_Date
+);
+
+SELECT * FROM Highest_Order_Salesman;
+
+
+
+
+
+Q5>
+
+DELETE FROM ORDERS
+WHERE Salesman_id = 1000;
+
+DELETE FROM SALESMAN
+WHERE Salesman_id = 1000;
