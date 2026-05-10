@@ -1,0 +1,152 @@
+CREATE DATABASE MovieDB;
+
+USE MovieDB;
+
+CREATE TABLE ACTOR
+(
+    Act_id INT PRIMARY KEY,
+    Act_Name VARCHAR(30),
+    Act_Gender VARCHAR(10)
+);
+
+CREATE TABLE DIRECTOR
+(
+    Dir_id INT PRIMARY KEY,
+    Dir_Name VARCHAR(30),
+    Dir_Phone VARCHAR(15)
+);
+
+CREATE TABLE MOVIES
+(
+    Mov_id INT PRIMARY KEY,
+    Mov_Title VARCHAR(50),
+    Mov_Year INT,
+    Mov_Lang VARCHAR(20),
+    Dir_id INT,
+    FOREIGN KEY (Dir_id) REFERENCES DIRECTOR(Dir_id)
+);
+
+CREATE TABLE MOVIE_CAST
+(
+    Act_id INT,
+    Mov_id INT,
+    Role VARCHAR(30),
+    FOREIGN KEY (Act_id) REFERENCES ACTOR(Act_id),
+    FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id)
+);
+
+CREATE TABLE RATING
+(
+    Mov_id INT,
+    Rev_Stars INT,
+    FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id)
+);
+
+INSERT INTO ACTOR VALUES
+(1,'Leonardo DiCaprio','Male'),
+(2,'Tom Hanks','Male'),
+(3,'Kate Winslet','Female'),
+(4,'Morgan Freeman','Male');
+
+INSERT INTO DIRECTOR VALUES
+(101,'Hitchcock','9876543210'),
+(102,'Steven Spielberg','9123456780'),
+(103,'Christopher Nolan','9988776655');
+
+INSERT INTO MOVIES VALUES
+(1001,'Psycho',1960,'English',101),
+(1002,'Vertigo',1958,'English',101),
+(1003,'Jurassic Park',1993,'English',102),
+(1004,'Lincoln',2016,'English',102),
+(1005,'Inception',2010,'English',103),
+(1006,'Interstellar',2018,'English',103);
+
+INSERT INTO MOVIE_CAST VALUES
+(1,1005,'Hero'),
+(1,1006,'Hero'),
+(2,1003,'Lead'),
+(2,1004,'Lead'),
+(3,1001,'Supporting'),
+(4,1002,'Supporting');
+
+INSERT INTO RATING VALUES
+(1003,5),
+(1003,4),
+(1004,4),
+(1005,5),
+(1006,4);
+
+
+
+
+
+Q1>
+
+SELECT M.Mov_Title
+FROM MOVIES M, DIRECTOR D
+WHERE M.Dir_id = D.Dir_id
+AND D.Dir_Name = 'Hitchcock';
+
+
+
+
+
+Q2>
+
+SELECT DISTINCT M.Mov_Title
+FROM MOVIES M, MOVIE_CAST MC
+WHERE M.Mov_id = MC.Mov_id
+AND MC.Act_id IN
+(
+    SELECT Act_id
+    FROM MOVIE_CAST
+    GROUP BY Act_id
+    HAVING COUNT(Mov_id) >= 2
+);
+
+
+
+
+
+Q3>
+
+SELECT DISTINCT A.Act_Name
+FROM ACTOR A
+JOIN MOVIE_CAST MC1
+ON A.Act_id = MC1.Act_id
+JOIN MOVIES M1
+ON MC1.Mov_id = M1.Mov_id
+JOIN MOVIE_CAST MC2
+ON A.Act_id = MC2.Act_id
+JOIN MOVIES M2
+ON MC2.Mov_id = M2.Mov_id
+WHERE M1.Mov_Year < 2000
+AND M2.Mov_Year > 2015;
+
+
+
+
+
+Q4>
+
+SELECT M.Mov_Title, MAX(R.Rev_Stars) AS Highest_Stars
+FROM MOVIES M, RATING R
+WHERE M.Mov_id = R.Mov_id
+GROUP BY M.Mov_Title
+ORDER BY M.Mov_Title;
+
+
+
+
+
+Q5>
+
+UPDATE RATING
+SET Rev_Stars = 5
+WHERE Mov_id IN
+(
+    SELECT M.Mov_id
+    FROM MOVIES M, DIRECTOR D
+    WHERE M.Dir_id = D.Dir_id
+    AND D.Dir_Name = 'Steven Spielberg'
+);
