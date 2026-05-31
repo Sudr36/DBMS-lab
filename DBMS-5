@@ -1,0 +1,148 @@
+CREATE DATABASE CompanyDB;
+USE CompanyDB;
+
+CREATE TABLE EMPLOYEE (
+    SSN INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Address VARCHAR(100),
+    Sex CHAR(1),
+    Salary DECIMAL(10,2),
+    SuperSSN INT,
+    DNo INT
+);
+
+CREATE TABLE DEPARTMENT (
+    DNo INT PRIMARY KEY,
+    DName VARCHAR(50),
+    MgrSSN INT,
+    MgrStartDate DATE
+);
+
+CREATE TABLE DLOCATION (
+    DNo INT,
+    DLoc VARCHAR(50),
+    PRIMARY KEY (DNo, DLoc)
+);
+
+CREATE TABLE PROJECT (
+    PNo INT PRIMARY KEY,
+    PName VARCHAR(50),
+    PLocation VARCHAR(50),
+    DNo INT
+);
+
+CREATE TABLE WORKS_ON (
+    SSN INT,
+    PNo INT,
+    Hours DECIMAL(5,2),
+    PRIMARY KEY (SSN, PNo)
+);
+
+INSERT INTO DEPARTMENT VALUES
+(1, 'HR', 101, '2020-01-10'),
+(2, 'Accounts', 102, '2019-03-15'),
+(3, 'IT', 103, '2021-06-20'),
+(4, 'Sales', 104, '2018-08-05'),
+(5, 'Research', 105, '2022-02-01');
+
+INSERT INTO EMPLOYEE VALUES
+(101, 'John Scott', 'Bangalore', 'M', 750000, NULL, 1),
+(102, 'Alice Brown', 'Mysore', 'F', 650000, 101, 2),
+(103, 'David Scott', 'Chennai', 'M', 800000, 101, 3),
+(104, 'Mary Jones', 'Hyderabad', 'F', 550000, 102, 4),
+(105, 'Robert King', 'Delhi', 'M', 900000, 103, 5),
+(106, 'Nancy White', 'Mumbai', 'F', 620000, 103, 5),
+(107, 'James Miller', 'Pune', 'M', 700000, 105, 5),
+(108, 'Linda Scott', 'Kolkata', 'F', 680000, 105, 5),
+(109, 'Chris Green', 'Noida', 'M', 500000, 104, 5),
+(110, 'Kevin Roy', 'Delhi', 'M', 720000, 105, 5),
+(111, 'Sara Khan', 'Mumbai', 'F', 610000, 105, 5);
+
+INSERT INTO DLOCATION VALUES
+(1, 'Bangalore'),
+(2, 'Mysore'),
+(3, 'Chennai'),
+(4, 'Hyderabad'),
+(5, 'Delhi'),
+(5, 'Mumbai');
+
+INSERT INTO PROJECT VALUES
+(201, 'IoT', 'Bangalore', 3),
+(202, 'AI', 'Delhi', 5),
+(203, 'Cloud', 'Mumbai', 5),
+(204, 'Payroll', 'Mysore', 2),
+(205, 'Recruitment', 'Bangalore', 1),
+(206, 'Marketing', 'Hyderabad', 4),
+(207, 'Security', 'Delhi', 5);
+
+INSERT INTO WORKS_ON VALUES
+(101, 205, 20),
+(102, 204, 30),
+(103, 201, 25),
+(105, 202, 35),
+(106, 202, 20),
+(106, 203, 15),
+(107, 203, 30),
+(107, 207, 18),
+(108, 202, 25),
+(108, 203, 20),
+(108, 207, 15),
+(109, 202, 18),
+(109, 203, 22),
+(109, 207, 20);
+
+Q1
+SELECT DISTINCT P.PNo
+FROM PROJECT P
+JOIN WORKS_ON W ON P.PNo = W.PNo
+JOIN EMPLOYEE E ON W.SSN = E.SSN
+WHERE E.Name LIKE '%Scott'
+
+UNION
+
+SELECT DISTINCT P.PNo
+FROM PROJECT P
+JOIN DEPARTMENT D ON P.DNo = D.DNo
+JOIN EMPLOYEE E ON D.MgrSSN = E.SSN
+WHERE E.Name LIKE '%Scott';
+
+Q2
+SELECT E.Name,
+       E.Salary AS OldSalary,
+       E.Salary * 1.10 AS NewSalary
+FROM EMPLOYEE E
+JOIN WORKS_ON W ON E.SSN = W.SSN
+JOIN PROJECT P ON W.PNo = P.PNo
+WHERE P.PName = 'IoT';
+
+Q3
+SELECT
+    SUM(E.Salary) AS TotalSalary,
+    MAX(E.Salary) AS MaximumSalary,
+    MIN(E.Salary) AS MinimumSalary,
+    AVG(E.Salary) AS AverageSalary
+FROM EMPLOYEE E
+JOIN DEPARTMENT D ON E.DNo = D.DNo
+WHERE D.DName = 'Accounts';
+
+Q4
+SELECT E.Name
+FROM EMPLOYEE E
+WHERE NOT EXISTS (
+    SELECT P.PNo
+    FROM PROJECT P
+    WHERE P.DNo = 5
+    AND NOT EXISTS (
+        SELECT *
+        FROM WORKS_ON W
+        WHERE W.SSN = E.SSN
+        AND W.PNo = P.PNo
+    )
+);
+
+Q5
+SELECT DNo,
+       COUNT(CASE WHEN Salary > 600000 THEN 1 END) AS HighSalaryEmployees
+FROM EMPLOYEE
+GROUP BY DNo
+HAVING COUNT(*) > 5;
